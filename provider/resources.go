@@ -597,6 +597,16 @@ func durationFromConfig(vars resource.PropertyMap, prop resource.PropertyKey) (*
 	return nil, nil
 }
 
+func sessionTags(tags resource.PropertyValue) map[string]string {
+	sessionTags := make(map[string]string, len(tags.ObjectValue()))
+	if tags.IsObject() {
+		for k, v := range tags.ObjectValue() {
+			sessionTags[string(k)] = v.String()
+		}
+	}
+	return sessionTags
+}
+
 //go:embed errors/no_credentials.txt
 var noCredentialsError string
 
@@ -638,6 +648,9 @@ func validateCredentials(vars resource.PropertyMap, c shim.ResourceConfig) error
 		if duration != nil {
 			assumeRole.Duration = *duration
 		}
+
+		assumeRole.Tags = sessionTags(details.ObjectValue()["tags"])
+
 		config.AssumeRole = []awsbase.AssumeRole{assumeRole}
 	}
 

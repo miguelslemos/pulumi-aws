@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pulumi/pulumi-terraform-bridge/v3/pkg/tfshim"
+	shim "github.com/pulumi/pulumi-terraform-bridge/v3/pkg/tfshim"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,5 +64,45 @@ func TestHasOptionalOrRequiredNamePropertyOptimized(t *testing.T) {
 			v := hasOptionalOrRequiredNameProperty(p.P, rn)
 			t.Logf("Should cache %v: %s", v, rn)
 		}
+	}
+}
+func TestSessionTags(t *testing.T) {
+	tests := []struct {
+		name string
+		tags resource.PropertyValue
+		want map[string]string
+	}{
+		{
+			name: "Empty tags",
+			tags: resource.NewObjectProperty(resource.PropertyMap{}),
+			want: map[string]string{},
+		},
+		{
+			name: "Single tag",
+			tags: resource.NewObjectProperty(resource.PropertyMap{
+				"key1": resource.NewStringProperty("value1"),
+			}),
+			want: map[string]string{
+				"key1": "{value1}",
+			},
+		},
+		{
+			name: "Multiple tags",
+			tags: resource.NewObjectProperty(resource.PropertyMap{
+				"key1": resource.NewStringProperty("value1"),
+				"key2": resource.NewStringProperty("value2"),
+			}),
+			want: map[string]string{
+				"key1": "{value1}",
+				"key2": "{value2}",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sessionTags(tt.tags)
+			assert.Equal(t, tt.want, got)
+		})
 	}
 }
